@@ -102,7 +102,9 @@ int main(void) {
 					} else {
 						char* state = json_dumps(json, JSON_COMPACT | JSON_ENCODE_ANY);
 						log_warn("State: %s", state);
+						// TODO: remove double sends
 						send(sock, state, strlen(state), 0);
+						send(sock, "\n", strlen("\n"), 0);
 						json_decref(json);
 						free(state);
 					}
