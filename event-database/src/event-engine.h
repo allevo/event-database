@@ -35,6 +35,9 @@ typedef struct {
 typedef struct {
 	char* name;
 	char* so_path;
+	char* reducer_function_name;
+	char* setup_function_name;
+	char* formatter_function_name;
 } add_reducer_command_t;
 
 typedef enum { ADD_EVENT, GET_STATE, ADD_REDUCER } command_type_t;

@@ -17,7 +17,7 @@
 #define ANOTHER_EVENT "{\"type\":\"E\",\"name\":\"other-name\"}"
 #define EVENT_WITH_PARAMS "{\"type\":\"E\",\"name\":\"my-name\",\"params\":{}}"
 #define GET_STATE_COMMAND "{\"type\":\"S:G\",\"name\":\"counter\"}"
-#define ADD_REDUCER_COMMAND "{\"type\":\"R:A\",\"name\":\"counter\",\"so\":\"/home/tommaso/eclipse-workspace/event-database-example/Debug/libevent-database-example.so\"}"
+#define ADD_REDUCER_COMMAND "{\"type\":\"R:A\",\"name\":\"counter\",\"so\":\"/home/tommaso/eclipse-workspace/event-database-example/Debug/libevent-database-example.so\",\"rfn\":\"example_counter\",\"sfn\":\"setup_example_counter\",\"ffn\":\"example_get_state_counter\"}"
 
 #define setup() command_t* commands[10]; \
 	event_engine_t event_engine; \

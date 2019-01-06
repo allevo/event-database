@@ -22,9 +22,6 @@ int event_engine_init(event_engine_t* event_engine) {
 }
 
 int event_engine_add_reducer (event_engine_t* event_engine, add_reducer_command_t* add_reducer_command) {
-	const char* setup_function_name = "setup_example_counter";
-	const char* reducer_function_name = "example_counter";
-	const char* formatter_function_name = "example_get_state_counter";
 	const char* name = add_reducer_command->name;
 	const char* file_path = add_reducer_command->so_path;
 	char *error;
@@ -45,29 +42,29 @@ int event_engine_add_reducer (event_engine_t* event_engine, add_reducer_command_
 
 
 	setup_state_function_t setup_state_function;
-	setup_state_function = dlsym(handle, setup_function_name);
+	setup_state_function = dlsym(handle, add_reducer_command->setup_function_name);
 	if ((error = dlerror()) != NULL)  {
 		free(reducer);
 		dlclose(handle);
-		log_error("Error on getting %s at %s", setup_function_name, file_path);
+		log_error("Error on getting %s at %s", add_reducer_command->setup_function_name, file_path);
 		return -1;
 	}
 
 	reducer_function_t reducer_function;
-	reducer_function = dlsym(handle, reducer_function_name);
+	reducer_function = dlsym(handle, add_reducer_command->reducer_function_name);
 	if ((error = dlerror()) != NULL)  {
 		free(reducer);
 		dlclose(handle);
-		log_error("Error on getting %s at %s", reducer_function_name, file_path);
+		log_error("Error on getting %s at %s", add_reducer_command->reducer_function_name, file_path);
 		return -1;
 	}
 
 	formatter_function_t formatter_function;
-	formatter_function = dlsym(handle, formatter_function_name);
+	formatter_function = dlsym(handle, add_reducer_command->formatter_function_name);
 	if ((error = dlerror()) != NULL)  {
 		free(reducer);
 		dlclose(handle);
-		log_error("Error on getting %s at %s", formatter_function_name, file_path);
+		log_error("Error on getting %s at %s", add_reducer_command->formatter_function_name, file_path);
 		return -1;
 	}
 
@@ -75,7 +72,7 @@ int event_engine_add_reducer (event_engine_t* event_engine, add_reducer_command_
 	if (res != 0) {
 		free(reducer);
 		dlclose(handle);
-		log_error("Error on initializing %s at %s", setup_function_name, file_path);
+		log_error("Error on initializing %s at %s", add_reducer_command->setup_function_name, file_path);
 		return -1;
 	}
 
@@ -138,15 +135,36 @@ command_t* create_command_from_json (event_engine_t* event_engine, json_t* json)
 		command->type = ADD_REDUCER;
 		json_t* reducer_name = json_object_get(json, "name");
 		if (reducer_name == NULL || !json_is_string(reducer_name)) return NULL;
+		log_debug("Reducer name found");
 		json_t* reducer_so_path = json_object_get(json, "so");
 		if (reducer_so_path == NULL || !json_is_string(reducer_so_path)) return NULL;
+		log_debug("Reducer so_path found");
+		json_t* reducer_function_name = json_object_get(json, "rfn");
+		if (reducer_function_name == NULL || !json_is_string(reducer_function_name)) return NULL;
+		log_debug("Reducer function name found");
+		json_t* setup_function_name = json_object_get(json, "sfn");
+		if (setup_function_name == NULL || !json_is_string(setup_function_name)) return NULL;
+		log_debug("Reducer setup function name found");
+		json_t* formatter_function_name = json_object_get(json, "ffn");
+		if (formatter_function_name == NULL || !json_is_string(formatter_function_name)) return NULL;
+		log_debug("Reducer formatter found");
 
 		add_reducer_command_t* add_reducer = malloc(sizeof(add_reducer_command_t));
+
 		add_reducer->name = malloc(sizeof(char) * json_string_length(reducer_name));
 		memcpy(add_reducer->name, json_string_value(reducer_name), json_string_length(reducer_name) + 1);
 
 		add_reducer->so_path = malloc(sizeof(char) * json_string_length(reducer_so_path));
 		memcpy(add_reducer->so_path, json_string_value(reducer_so_path), json_string_length(reducer_so_path) + 1);
+
+		add_reducer->reducer_function_name = malloc(sizeof(char) * json_string_length(reducer_function_name));
+		memcpy(add_reducer->reducer_function_name, json_string_value(reducer_function_name), json_string_length(reducer_function_name) + 1);
+
+		add_reducer->setup_function_name = malloc(sizeof(char) * json_string_length(setup_function_name));
+		memcpy(add_reducer->setup_function_name, json_string_value(setup_function_name), json_string_length(setup_function_name) + 1);
+
+		add_reducer->formatter_function_name = malloc(sizeof(char) * json_string_length(formatter_function_name));
+		memcpy(add_reducer->formatter_function_name, json_string_value(formatter_function_name), json_string_length(formatter_function_name) + 1);
 
 		command->command_data = add_reducer;
 		return command;

@@ -48,7 +48,8 @@ $ telnet 127.0.0.1 54321
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is '^]'.
-{"type":"R:A","name":"counter","so":"/<path>/<to>/<repo>/event-database-example/libevent-database-example.so"}
+
+{"type":"R:A","name":"counter","so":"/<path>/<to>/<repo>/event-database-example/libevent-database-example.so","rfn":"example_counter","sfn":"setup_example_counter","ffn":"example_get_state_counter"}
 "OK"
 {"type":"E","name":"some"}
 "OK"
