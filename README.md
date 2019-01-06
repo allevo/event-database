@@ -5,7 +5,7 @@ Each reducer is a c function that keeps a state and an event and calculates the 
 
 The reducer function is stored into a shared object.
 
-A client can query to this database using (JSON line)[http://jsonlines.org/] with TCP connections.
+A client can query to this database using [JSON line](http://jsonlines.org/) with TCP connections.
 
 ## Compile and Run
 
@@ -82,7 +82,7 @@ This project is born in a weekend. A LOT of piece should be improved.
 ## Licence
 
 Jansson library has own Licence.
-Some piece of codes like "pipe" and "logger" library are published under their licence.
+Some piece of codes like "pipe", "logger", "minunit" libraries are published under their licence.
 
 The remain code are published under MIT.
 
