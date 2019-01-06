@@ -1,3 +1,6 @@
+
+set -ax
+
 # jansson deps
 cd jansson
 ./configure
