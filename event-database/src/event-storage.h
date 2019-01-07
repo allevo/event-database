@@ -10,6 +10,9 @@
 
 #include <event-database-sdk.h>
 
+#include <sys/types.h>
+#include <pthread.h>
+
 #include "pipe/pipe.h"
 
 typedef struct {
