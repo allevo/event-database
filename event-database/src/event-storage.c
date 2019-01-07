@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-
+#include <sys/types.h>
 #include <pthread.h>
 
 void* write_to_file (void *x_void_ptr) {
