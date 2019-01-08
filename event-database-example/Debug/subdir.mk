@@ -6,6 +6,9 @@
 C_SRCS += \
 ../counter.c 
 
+O_SRCS += \
+../counter.o 
+
 OBJS += \
 ./counter.o 
 

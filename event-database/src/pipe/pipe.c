@@ -258,7 +258,7 @@ static void cond_destroy(cond_t* c)
  *
  * In this case, the data storage is split up, wrapping around to the beginning
  * of the buffer when it hits bufend. Hackery must be done in this case to
- * ensure the structure is maintained and data can be easily copied in/out.
+ * ensure the structurpthread_mutex_te is maintained and data can be easily copied in/out.
  *
  * Data is 'push'ed after the end pointer and 'pop'ed from the begin pointer.
  * There is always one sentinel element in the pipe, to distinguish between an
@@ -383,7 +383,7 @@ static inline snapshot_t make_snapshot(pipe_t* p)
 // sentinel element.
 static inline size_t capacity(snapshot_t s)
 {
-    return s.bufend - s.buffer - s.elem_size;
+    return (size_t) s.bufend - (size_t) s.buffer - s.elem_size;
 }
 
 // Does the buffer wrap around?
@@ -400,8 +400,8 @@ static inline size_t bytes_in_use(snapshot_t s)
 {
     return (wraps_around(s)
     //         v   right half   v   v     left half    v
-            ? ((s.end - s.buffer) + (s.bufend - s.begin))
-            : (s.end - s.begin))
+            ? (((size_t) s.end - (size_t) s.buffer) + ((size_t) s.bufend - (size_t) s.begin))
+            : ((size_t) s.end - (size_t) s.begin))
         // exclude the sentinel element.
         - s.elem_size;
 }
@@ -411,7 +411,7 @@ static inline char* wrap_ptr_if_necessary(char* buffer,
                                           char* bufend)
 {
     if(p >= bufend) {
-        size_t diff = p - bufend;
+        size_t diff = (size_t) p - (size_t) bufend;
         return buffer + diff;
     } else {
         return p;
@@ -423,7 +423,7 @@ static inline char* rev_wrap_ptr_if_necessary(char* buffer,
                                               char* bufend)
 {
     if(p < buffer) {
-        size_t diff = buffer - p;
+        size_t diff = (size_t) buffer - (size_t) p;
         return bufend - diff;
     } else {
         return p;
@@ -716,12 +716,12 @@ static inline char* copy_pipe_into_new_buf(snapshot_t s,
 {
     if(wraps_around(s))
     {
-        buf = offset_memcpy(buf, s.begin, s.bufend - s.begin);
-        buf = offset_memcpy(buf, s.buffer, s.end - s.buffer);
+        buf = offset_memcpy(buf, s.begin, (size_t) s.bufend - (size_t) s.begin);
+        buf = offset_memcpy(buf, s.buffer, (size_t) s.end - (size_t) s.buffer);
     }
     else
     {
-        buf = offset_memcpy(buf, s.begin, s.end - s.begin);
+        buf = offset_memcpy(buf, s.begin, (size_t) s.end - (size_t) s.begin);
     }
 
     return buf;
@@ -821,7 +821,7 @@ static inline char* process_push(snapshot_t s,
     }
 
     // Now copy any remaining data...
-    if(unlikely(bytes_to_copy))
+    if(unlikely((long int) bytes_to_copy))
     {
         s.end = wrap_ptr_if_necessary(s.buffer, s.end, s.bufend);
         s.end = offset_memcpy(s.end, elems, bytes_to_copy);
@@ -898,7 +898,7 @@ void __pipe_push(pipe_t* p,
     // recurse.
     size_t bytes_remaining = count - pushed;
 
-    if(unlikely(bytes_remaining))
+    if(unlikely((long int) bytes_remaining))
         __pipe_push(p, (const char*)elems + pushed, bytes_remaining);
 }
 
@@ -960,7 +960,7 @@ static inline snapshot_t pop_without_locking(snapshot_t s,
     // Copy either as many bytes as requested, or the available bytes in the RHS
     // of a wrapped buffer - whichever is smaller.
     {
-        size_t first_bytes_to_copy = min(bytes_to_copy, (size_t)(s.bufend - s.begin - elem_size));
+        size_t first_bytes_to_copy = min((size_t) bytes_to_copy, (size_t) s.bufend - (size_t) s.begin - elem_size);
 
         target = offset_memcpy(target, s.begin + elem_size, first_bytes_to_copy);
 
@@ -1082,18 +1082,18 @@ size_t pipe_pop(pipe_consumer_t* p, void* target, size_t count)
 {
     size_t elem_size = __pipe_elem_size(PIPIFY(p));
 
-    size_t bytes_left  = count*elem_size;
-    size_t bytes_popped = 0;
-    size_t ret = -1;
+    long long int bytes_left  = (long long int) count * (long long int) elem_size;
+    long long int bytes_popped = 0;
+    long long int ret = -1;
 
     do {
-        ret = __pipe_pop(PIPIFY(p), target, bytes_left);
+        ret = (long long int) __pipe_pop(PIPIFY(p), target, (size_t) bytes_left);
         target = (void*)((char*)target + ret);
         bytes_popped += ret;
         bytes_left   -= ret;
     } while(ret != 0 && bytes_left);
 
-    return bytes_popped / elem_size;
+    return (size_t) bytes_popped / elem_size;
 }
 
 size_t pipe_pop_eager(pipe_consumer_t* p, void* target, size_t count)

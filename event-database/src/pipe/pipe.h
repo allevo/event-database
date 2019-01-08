@@ -1,3 +1,5 @@
+// FROM https://github.com/cgaebel/pipe
+
 /* pipe.h - The public pipe interface. This is the only file that must be
  *          included to begin using the pipe.
  *

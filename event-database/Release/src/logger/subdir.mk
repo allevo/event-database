@@ -6,6 +6,9 @@
 C_SRCS += \
 ../src/logger/log.c 
 
+O_SRCS += \
+../src/logger/log.o 
+
 OBJS += \
 ./src/logger/log.o 
 

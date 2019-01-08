@@ -12,6 +12,7 @@
 #include <dlfcn.h>
 
 #include <jansson.h>
+#include <pthread.h>
 
 #include <event-database-sdk.h>
 
@@ -25,11 +26,17 @@ typedef struct {
 	reducer_function_t handler;
 	formatter_function_t formatter;
 	state_t state;
+	pthread_t thread;
+	int command_fd[2];
+	int return_state_fd[2];
+
+	pthread_mutex_t state_mutex;
 } reducer_t;
 
 typedef struct {
 	size_t reducers_count;
 	reducer_t* reducers;
+	pthread_mutex_t mutex;
 } event_engine_t;
 
 typedef struct {
@@ -48,7 +55,7 @@ typedef struct {
 
 
 int event_engine_init(event_engine_t*);
-size_t event_engine_parse(event_engine_t*, const char*, size_t, command_t** commands);
+size_t event_engine_parse(event_engine_t* event_engine, const char*, size_t, command_t** commands);
 
 int event_engine_add_reducer (event_engine_t* event_engine, add_reducer_command_t* add_reducer_command);
 

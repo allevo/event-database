@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "../event-engine.h"
+#include "../event-parser.h"
 
 #include "../logger/log.h"
 
@@ -32,26 +33,26 @@ MU_TEST(test_parse_empty_buffer) {
 	setup()
 	const char buffer[1024];
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, 0, commands);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, 0, commands);
 
-	mu_assert_int_eq(0, parsed_command_count);
+	mu_assert_int_eq(0, (int) parsed_command_count);
 }
 MU_TEST(test_parse_empty_object) {
 	setup()
 	const char buffer[1024] = "{}";
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, 2, commands);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, 2, commands);
 
-	mu_assert_int_eq(0, parsed_command_count);
+	mu_assert_int_eq(0, (int) parsed_command_count);
 }
 MU_TEST(test_parse_one_event_no_parameters) {
 	setup()
 	const char buffer[1024] = EVENT;
 	event_t* event;
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
 
-	mu_assert_int_eq(1, parsed_command_count);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 
 	event = commands[0]->command_data;
 	mu_assert_stringn_eq("my-name", event->name.data, event->name.len);
@@ -61,18 +62,18 @@ MU_TEST(test_parse_multiple_empty_object) {
 	setup()
 	const char buffer[1024] = "{}\n{}\n{}\n\n\n{}";
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
 
-	mu_assert_int_eq(0, parsed_command_count);
+	mu_assert_int_eq(0, (int) parsed_command_count);
 }
 MU_TEST(test_parse_multiple_events) {
 	setup()
 	const char buffer[1024] = EVENT "\n" ANOTHER_EVENT "\n" EVENT "\n\n\n\n" EVENT;
 	event_t* event;
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
 
-	mu_assert_int_eq(4, parsed_command_count);
+	mu_assert_int_eq(4, (int) parsed_command_count);
 
 	event = commands[0]->command_data;
 	mu_assert_stringn_eq("my-name", event->name.data, event->name.len);
@@ -91,43 +92,43 @@ MU_TEST(test_parse_only_new_lines) {
 	setup()
 	const char buffer[1024] = "\n\n\n\n\n\n";
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(0, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(0, (int) parsed_command_count);
 }
 MU_TEST(test_parse_wrong_json_1) {
 	setup()
 	const char buffer[1024] = "{";
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(0, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(0, (int) parsed_command_count);
 }
 MU_TEST(test_parse_wrong_json_2) {
 	setup()
 	const char buffer[1024] = EVENT "\n{";
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 }
 MU_TEST(test_parse_wrong_json_3) {
 	setup()
 	const char buffer[1024] = EVENT "\n{\n" EVENT;
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(2, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(2, (int) parsed_command_count);
 }
 MU_TEST(test_parse_wrong_json_4) {
 	setup()
 	const char buffer[1024] = "{\n" EVENT;
 
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 }
 MU_TEST(test_parse_event_with_params) {
 	setup()
 	const char buffer[1024] = EVENT_WITH_PARAMS;
 	event_t* event;
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 
 	event = commands[0]->command_data;
 	mu_assert_stringn_eq("my-name", event->name.data, event->name.len);
@@ -138,8 +139,8 @@ MU_TEST(test_parse_get_state) {
 	setup()
 	const char buffer[1024] = GET_STATE_COMMAND;
 	char* state_name;
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 
 	mu_assert_int_eq(GET_STATE, commands[0]->type);
 
@@ -150,8 +151,8 @@ MU_TEST(test_parse_add_reducer) {
 	setup()
 	const char buffer[1024] = ADD_REDUCER_COMMAND;
 	add_reducer_command_t* add_reducer;
-	int parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 
 	mu_assert_int_eq(ADD_REDUCER, commands[0]->type);
 
@@ -183,7 +184,7 @@ MU_TEST_SUITE(test_parse) {
 typedef struct {
 	uint32_t count;
 } example_state_t;
-MU_TEST(test_reducer) {
+MU_TEST(test_reducer_1) {
 	setup()
 	const char buffer[1024] = EVENT_WITH_PARAMS;
 	const char* example_so_path = "/home/tommaso/eclipse-workspace/event-database-example/Debug/libevent-database-example.so";
@@ -192,8 +193,8 @@ MU_TEST(test_reducer) {
 	event_engine_init(&event_engine);
 
 	const char admin_buffer[2014] = ADD_REDUCER_COMMAND;
-	int parsed_command_count = event_engine_parse(&event_engine, admin_buffer, strlen(admin_buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	size_t parsed_command_count = event_engine_parse(&event_engine, admin_buffer, strlen(admin_buffer), commands);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 	mu_assert_int_eq(ADD_REDUCER, commands[0]->type);
 	add_reducer_command_t* add_reducer_command = commands[0]->command_data;
 	mu_assert_string_eq("counter", add_reducer_command->name);
@@ -202,46 +203,61 @@ MU_TEST(test_reducer) {
 	int ret = event_engine_add_reducer(&event_engine, add_reducer_command);
 
 	mu_assert_int_eq(0, ret);
-	mu_assert_int_eq(1, event_engine.reducers_count);
+	mu_assert_int_eq(1, (int) event_engine.reducers_count);
 	mu_assert_string_eq("counter", event_engine.reducers[0].name);
 	mu_assert_string_eq(example_so_path, event_engine.reducers[0].library_path);
 	mu_check(event_engine.reducers[0].state.user_data != NULL);
 	example_state_t* example_state = event_engine.reducers[0].state.user_data;
-	mu_assert_int_eq(0, example_state->count);
+	mu_assert_int_eq(0, (int) example_state->count);
 
 	parsed_command_count = event_engine_parse(&event_engine, buffer, strlen(buffer), commands);
-	mu_assert_int_eq(1, parsed_command_count);
+	mu_assert_int_eq(1, (int) parsed_command_count);
 
 	event = commands[0]->command_data;
 
 	ret = event_engine_dispatch_event(&event_engine, event);
 
 	mu_assert_int_eq(0, ret);
-	mu_assert_int_eq(1, example_state->count);
+	mu_assert_int_eq(1, (int) example_state->count);
 
 	event_engine_dispatch_event(&event_engine, event);
 	event_engine_dispatch_event(&event_engine, event);
 	event_engine_dispatch_event(&event_engine, event);
 	event_engine_dispatch_event(&event_engine, event);
 
-	mu_assert_int_eq(5, example_state->count);
+	mu_assert_int_eq(5, (int) example_state->count);
 
 	json_t* num = event_engine_get_reducer_state(&event_engine, "counter");
 
 	 mu_check(num != NULL);
-	 mu_assert_int_eq(5, json_number_value(num));
+	 mu_assert_int_eq(5, (int) json_number_value(num));
 }
 
-MU_TEST_SUITE(test_add_reducer) {
+MU_TEST(test_reducer_2) {
+	char buffer[1024] = ADD_REDUCER_COMMAND "\n" EVENT_WITH_PARAMS "\n" GET_STATE_COMMAND "\n";
+	char response[1024];
+	size_t response_length;
+	event_engine_t event_engine;
+	event_engine_init(&event_engine);
+
+	parse_input_buffer(buffer, 1024, response, &response_length, &event_engine);
+
+	mu_assert_int_eq(12, (int) response_length);
+
+	mu_assert_stringn_eq("\"OK\"\n\"OK\"\n1\n", response, 12);
+}
+
+MU_TEST_SUITE(tests_reducer) {
 	MU_SUITE_CONFIGURE(&test_setup, &test_teardown);
 
-	MU_RUN_TEST(test_reducer);
+	MU_RUN_TEST(test_reducer_1);
+	MU_RUN_TEST(test_reducer_2);
 }
 
 
-int main(int argc, char **argv) {
+int main(void) {
 	MU_RUN_SUITE(test_parse);
-	MU_RUN_SUITE(test_add_reducer);
+	MU_RUN_SUITE(tests_reducer);
 	MU_REPORT();
 	return minunit_fail != 0;
 }

@@ -15,7 +15,8 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-void* write_to_file (void *x_void_ptr) {
+void* write_to_file (void *ptr) {
+	log_debug("ptr: %p", ptr);
 	return NULL;
 }
 

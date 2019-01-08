@@ -6,6 +6,9 @@
 C_SRCS += \
 ../src/pipe/pipe.c 
 
+O_SRCS += \
+../src/pipe/pipe.o 
+
 OBJS += \
 ./src/pipe/pipe.o 
 

@@ -6,16 +6,24 @@
 C_SRCS += \
 ../src/event-database.c \
 ../src/event-engine.c \
+../src/event-net.c \
 ../src/event-storage.c 
+
+O_SRCS += \
+../src/event-database.o \
+../src/event-engine.o \
+../src/event-storage.o 
 
 OBJS += \
 ./src/event-database.o \
 ./src/event-engine.o \
+./src/event-net.o \
 ./src/event-storage.o 
 
 C_DEPS += \
 ./src/event-database.d \
 ./src/event-engine.d \
+./src/event-net.d \
 ./src/event-storage.d 
 
 

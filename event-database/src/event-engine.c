@@ -7,17 +7,55 @@
 
 #include "event-engine.h"
 #include "logger/log.h"
+#include "pipe/pipe.h"
 
+#include <unistd.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <dlfcn.h>
 
+#define READ_PIPE_SIDE 0
+#define WRITE_PIPE_SIDE 1
+
+static void* reducer_thread_function (void *arg) {
+	reducer_t* reducer = arg;
+	reducer_function_t handler = reducer->handler;
+	state_t* state = &(reducer->state);
+	int fp = reducer->command_fd[READ_PIPE_SIDE];
+
+	event_t* buffer[1024];
+	ssize_t len;
+
+	event_t* ev;
+	int i;
+	while (1) {
+		len = read(fp, buffer, 1024);
+		if (len == 0) {
+			log_info("Closing reducer: %s", reducer->name);
+			break;
+		}
+
+		pthread_mutex_lock(&(reducer->state_mutex));
+		log_debug("Receiving %d events", len);
+		for (i = 0; i < len; i++) {
+			ev = buffer[i];
+			handler(state, ev);
+		}
+		pthread_mutex_unlock(&(reducer->state_mutex));
+	}
+
+	return NULL;
+}
+
 int event_engine_init(event_engine_t* event_engine) {
 	event_engine->reducers_count = 0;
 	event_engine->reducers = malloc(sizeof(reducer_t) * event_engine->reducers_count);
 	if (event_engine->reducers == NULL) return -1;
+
+	pthread_mutex_init(&(event_engine->mutex), NULL);
+
 	return 0;
 }
 
@@ -33,13 +71,17 @@ int event_engine_add_reducer (event_engine_t* event_engine, add_reducer_command_
 	}
 	dlerror();
 
-	event_engine->reducers = realloc(event_engine->reducers, sizeof(reducer_t) * ++event_engine->reducers_count);
+	pthread_mutex_lock(&(event_engine->mutex));
 
+	event_engine->reducers = realloc(event_engine->reducers, sizeof(reducer_t) * ++event_engine->reducers_count);
 	reducer_t* reducer = &event_engine->reducers[event_engine->reducers_count - 1];
+
 	reducer->library_path = malloc(sizeof(char*) * strlen(file_path));
 	strcpy(reducer->library_path, file_path);
 	log_debug("Opening file at %s", reducer->library_path);
 
+	reducer->name = malloc(sizeof(char) * strlen(name));
+	strcpy(reducer->name, name);
 
 	setup_state_function_t setup_state_function;
 	setup_state_function = dlsym(handle, add_reducer_command->setup_function_name);
@@ -78,15 +120,27 @@ int event_engine_add_reducer (event_engine_t* event_engine, add_reducer_command_
 
 	reducer->handler = reducer_function;
 	reducer->formatter = formatter_function;
-	reducer->name = malloc(sizeof(char) * strlen(name));
-	strcpy(reducer->name, name);
+
+	if (pipe(reducer->command_fd) == -1) {
+		log_info("Unable to pipe for reducer: %s", reducer->name);
+		return -1;
+	}
+
+	if (pthread_create(&(reducer->thread), NULL, reducer_thread_function, reducer) != 0) {
+		log_info("Unable to create a new thread for reducer: %s", reducer->name);
+		return -1;
+	}
+
+	pthread_mutex_init(&(reducer->state_mutex), NULL);
+
+	pthread_mutex_unlock(&(event_engine->mutex));
 
 	log_info("Created new reducer: %s", reducer->name);
 
 	return 0;
 }
 
-command_t* create_command_from_json (event_engine_t* event_engine, json_t* json) {
+command_t* create_command_from_json (json_t* json) {
 	if (!json_is_object(json)) return NULL;
 	json_t* command_type_json = json_object_get(json, "type");
 	if (command_type_json == NULL || !json_is_string(command_type_json)) return NULL;
@@ -175,6 +229,8 @@ command_t* create_command_from_json (event_engine_t* event_engine, json_t* json)
 }
 
 size_t event_engine_parse(event_engine_t* event_engine, const char* buffer, size_t len, command_t** commands) {
+	log_debug("event_engine: %p", event_engine);
+
 	size_t diff;
 	size_t count = 0;
 	uint32_t i = 0;
@@ -202,7 +258,7 @@ size_t event_engine_parse(event_engine_t* event_engine, const char* buffer, size
 		}
 
 		log_debug("Creating command...");
-		command = create_command_from_json(event_engine, json);
+		command = create_command_from_json(json);
 		if (command != NULL) {
 			commands[count] = command;
 			count ++;
@@ -217,34 +273,51 @@ size_t event_engine_parse(event_engine_t* event_engine, const char* buffer, size
 }
 
 int event_engine_dispatch_event (event_engine_t* event_engine, event_t* event) {
-	log_debug("Dispatching event: %.*s", event->name.len, event->name.data);
-	for (int i = 0; i < event_engine->reducers_count; i++) {
-		reducer_t* reducer = &event_engine->reducers[i];
+	pthread_mutex_t mutex = event_engine->mutex;
+	pthread_mutex_lock(&mutex);
 
-		reducer->handler(&(reducer->state), event);
+	log_debug("Dispatching event: %.*s", event->name.len, event->name.data);
+
+	int fp;
+	for (unsigned int i = 0; i < event_engine->reducers_count; i++) {
+		reducer_t* reducer = &event_engine->reducers[i];
+		fp = reducer->command_fd[WRITE_PIPE_SIDE];
+
+		write(fp, event, 1);
+		// reducer->handler(&(reducer->state), event);
 	}
+
+	pthread_mutex_unlock(&mutex);
+
 	return 0;
 }
 
 json_t* event_engine_get_reducer_state (event_engine_t* event_engine, const char* reducer_name) {
 	reducer_t* reducer = NULL;
 
-	for (int i = 0; i < event_engine->reducers_count; i++) {
+	pthread_mutex_t* mutex = &(event_engine->mutex);
+
+	pthread_mutex_lock(mutex);
+	for (unsigned int i = 0; i < event_engine->reducers_count; i++) {
 		log_debug("Reducer name %s === %s", event_engine->reducers[i].name, reducer_name);
 
 		if (strcmp(reducer_name, event_engine->reducers[i].name) != 0) continue;
 		log_debug("Reducer found");
 		reducer = &event_engine->reducers[i];
 	}
+	pthread_mutex_unlock(mutex);
 
 	if (reducer == NULL) {
 		log_warn("Reducer '%s' not found", reducer_name);
 		return NULL;
 	}
 
+	pthread_mutex_lock(&(reducer->state_mutex));
 	log_trace("reducer->formatter %p with state %p", reducer->formatter, reducer->state.user_data);
 	json_t* output = reducer->formatter(&(reducer->state));
 	log_trace("Formatter output %p", output);
+	pthread_mutex_unlock(&(reducer->state_mutex));
+
 	if (output == NULL) {
 		log_warn("Unable to format the state: %s", reducer_name);
 		return NULL;
