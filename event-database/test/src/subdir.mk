@@ -12,6 +12,8 @@ C_SRCS += \
 O_SRCS += \
 ../src/event-database.o \
 ../src/event-engine.o \
+../src/event-net.o \
+../src/event-parser.o \
 ../src/event-storage.o 
 
 OBJS += \

@@ -8,6 +8,7 @@
 #include "minunit.h"
 
 #include <stdint.h>
+#include <time.h>
 
 #include "../event-engine.h"
 #include "../event-parser.h"
@@ -19,6 +20,8 @@
 #define EVENT_WITH_PARAMS "{\"type\":\"E\",\"name\":\"my-name\",\"params\":{}}"
 #define GET_STATE_COMMAND "{\"type\":\"S:G\",\"name\":\"counter\"}"
 #define ADD_REDUCER_COMMAND "{\"type\":\"R:A\",\"name\":\"counter\",\"so\":\"/home/tommaso/eclipse-workspace/event-database-example/Debug/libevent-database-example.so\",\"rfn\":\"example_counter\",\"sfn\":\"setup_example_counter\",\"ffn\":\"example_get_state_counter\"}"
+
+#define wait_for_a_while() nanosleep((const struct timespec[]){{0, 500000000L}}, NULL) // 500ms
 
 #define setup() command_t* commands[10]; \
 	event_engine_t event_engine; \
@@ -217,6 +220,8 @@ MU_TEST(test_reducer_1) {
 
 	ret = event_engine_dispatch_event(&event_engine, event);
 
+	wait_for_a_while();
+
 	mu_assert_int_eq(0, ret);
 	mu_assert_int_eq(1, (int) example_state->count);
 
@@ -224,6 +229,8 @@ MU_TEST(test_reducer_1) {
 	event_engine_dispatch_event(&event_engine, event);
 	event_engine_dispatch_event(&event_engine, event);
 	event_engine_dispatch_event(&event_engine, event);
+
+	wait_for_a_while();
 
 	mu_assert_int_eq(5, (int) example_state->count);
 
@@ -234,17 +241,27 @@ MU_TEST(test_reducer_1) {
 }
 
 MU_TEST(test_reducer_2) {
-	char buffer[1024] = ADD_REDUCER_COMMAND "\n" EVENT_WITH_PARAMS "\n" GET_STATE_COMMAND "\n";
+	char buffer1[1024] = ADD_REDUCER_COMMAND "\n" EVENT_WITH_PARAMS "\n";
+	char buffer2[1024] = GET_STATE_COMMAND "\n";
 	char response[1024];
 	size_t response_length;
 	event_engine_t event_engine;
 	event_engine_init(&event_engine);
 
-	parse_input_buffer(buffer, 1024, response, &response_length, &event_engine);
+	const char* expected_reponse_buffer1 = "\"OK\"\n\"OK\"\n";
+	size_t expected_reponse_length_buffer1 = strlen("\"OK\"\n\"OK\"\n");
 
-	mu_assert_int_eq(12, (int) response_length);
+	parse_input_buffer(buffer1, 1024, response, &response_length, &event_engine);
 
-	mu_assert_stringn_eq("\"OK\"\n\"OK\"\n1\n", response, 12);
+	mu_assert_int_eq((int) expected_reponse_length_buffer1, (int) response_length);
+	mu_assert_stringn_eq(expected_reponse_buffer1, response, expected_reponse_length_buffer1);
+
+	wait_for_a_while();
+
+	parse_input_buffer(buffer2, 1024, response, &response_length, &event_engine);
+
+	mu_assert_int_eq(2, (int) response_length);
+	mu_assert_stringn_eq("1\n", response, 2);
 }
 
 MU_TEST_SUITE(tests_reducer) {

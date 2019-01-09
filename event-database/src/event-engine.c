@@ -312,6 +312,7 @@ json_t* event_engine_get_reducer_state (event_engine_t* event_engine, const char
 		return NULL;
 	}
 
+	// TODO remove and use read() with write()
 	pthread_mutex_lock(&(reducer->state_mutex));
 	log_trace("reducer->formatter %p with state %p", reducer->formatter, reducer->state.user_data);
 	json_t* output = reducer->formatter(&(reducer->state));

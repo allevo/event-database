@@ -137,3 +137,7 @@ dkms.conf
 
 
 jansson/
+event-database/Debug/event-database
+event-database/event-database
+event-database/event-database-tests
+event-database/test/event-database
