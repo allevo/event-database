@@ -17,7 +17,7 @@ fi
 # a reducer example
 cd ../event-database-example
 gcc -I"../event-database-sdk" -I"../jansson/src" -O0 -g3 -Wall -c -fmessage-length=0 -fPIC -MMD -MP -MF"counter.d" -MT"counter.o" -o "counter.o" "counter.c" -std=c99
-gcc -L"../jansson/src" -L"../jansson/src/.libs" -shared -o "libevent-database-example.so"  ./counter.o   -ljansson -std=c99
+gcc -shared -o "Debug/libevent-database-example.so"  ../jansson/src/.libs/*.o ./counter.o -std=c99
 # the database
 cd ../event-database
 gcc -I"../event-database-sdk" -I"../jansson/src" -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/pipe/pipe.d" -MT"src/pipe/pipe.o" -o "src/pipe/pipe.o" "src/pipe/pipe.c" -std=c99
@@ -32,5 +32,5 @@ gcc -L"../jansson/src" -L"../jansson/src/.libs" -o "event-database"  ./src/pipe/
 
 gcc -I"../event-database-sdk" -I"../jansson/src" -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/tests/tests.d" -MT"src/tests/tests.o" -o "src/tests/tests.o" "src/tests/tests.c" -std=c99
 
-gcc -o "event-database-tests" ../jansson/src/.libs/*.o ./src/pipe/pipe.o  ./src/logger/log.o ./src/tests/tests.o ./src/event-engine.o ./src/event-net.o ./src/event-parser.o ./src/event-storage.o -lpthread -ldl 
+gcc -o "event-database-tests" ../jansson/src/.libs/*.o ./src/pipe/pipe.o  ./src/logger/log.o ./src/tests/tests.o ./src/event-engine.o ./src/event-net.o ./src/event-parser.o ./src/event-storage.o -lpthread -ldl
 ./event-database-tests

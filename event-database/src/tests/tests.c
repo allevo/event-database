@@ -19,7 +19,7 @@
 #define ANOTHER_EVENT "{\"type\":\"E\",\"name\":\"other-name\"}"
 #define EVENT_WITH_PARAMS "{\"type\":\"E\",\"name\":\"my-name\",\"params\":{}}"
 #define GET_STATE_COMMAND "{\"type\":\"S:G\",\"name\":\"counter\"}"
-#define ADD_REDUCER_COMMAND "{\"type\":\"R:A\",\"name\":\"counter\",\"so\":\"/home/tommaso/eclipse-workspace/event-database-example/Debug/libevent-database-example.so\",\"rfn\":\"example_counter\",\"sfn\":\"setup_example_counter\",\"ffn\":\"example_get_state_counter\"}"
+#define ADD_REDUCER_COMMAND "{\"type\":\"R:A\",\"name\":\"counter\",\"so\":\"../event-database-example/Debug/libevent-database-example.so\",\"rfn\":\"example_counter\",\"sfn\":\"setup_example_counter\",\"ffn\":\"example_get_state_counter\"}"
 
 #define wait_for_a_while() nanosleep((const struct timespec[]){{0, 500000000L}}, NULL) // 500ms
 
@@ -190,7 +190,7 @@ typedef struct {
 MU_TEST(test_reducer_1) {
 	setup()
 	const char buffer[1024] = EVENT_WITH_PARAMS;
-	const char* example_so_path = "/home/tommaso/eclipse-workspace/event-database-example/Debug/libevent-database-example.so";
+	const char* example_so_path = "../event-database-example/Debug/libevent-database-example.so";
 	event_t* event;
 
 	event_engine_init(&event_engine);
