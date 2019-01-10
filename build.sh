@@ -28,9 +28,9 @@ gcc -I"../event-database-sdk" -I"../jansson/src" -O3 -Wall -c -fmessage-length=0
 gcc -I"../event-database-sdk" -I"../jansson/src" -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/event-net.d" -MT"src/event-net.o" -o "src/event-net.o" "src/event-net.c" -std=c99
 gcc -I"../event-database-sdk" -I"../jansson/src" -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/event-parser.d" -MT"src/event-parser.o" -o "src/event-parser.o" "src/event-parser.c" -std=c99
 
-gcc -L"../jansson/src" -L"../jansson/src/.libs" -o "event-database"  ./src/pipe/pipe.o  ./src/logger/log.o  ./src/event-database.o ./src/event-engine.o ./src/event-net.o ./src/event-parser.o ./src/event-storage.o   -ljansson -lpthread -ldl
+gcc -L"../jansson/src" -L"../jansson/src/.libs" -o "event-database"  ./src/pipe/pipe.o  ./src/logger/log.o  ./src/event-database.o ./src/event-engine.o ./src/event-net.o ./src/event-parser.o ./src/event-storage.o   -ljansson -lpthread -ldl -Wl,-rpath $(pwd)/../jansson/src/.libs
 
 gcc -I"../event-database-sdk" -I"../jansson/src" -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/tests/tests.d" -MT"src/tests/tests.o" -o "src/tests/tests.o" "src/tests/tests.c" -std=c99
 
-gcc -L"../jansson/src" -L"../jansson/src/.libs" -o "event-database-tests"  ./src/pipe/pipe.o  ./src/logger/log.o ./src/event-engine.o ./src/event-net.o ./src/event-parser.o ./src/event-storage.o ./src/tests/tests.o  -ljansson -lpthread -ldl
+gcc -o "event-database-tests" ../jansson/src/.libs/*.o ./src/pipe/pipe.o  ./src/logger/log.o ./src/tests/tests.o ./src/event-engine.o ./src/event-net.o ./src/event-parser.o ./src/event-storage.o -lpthread -ldl 
 ./event-database-tests
